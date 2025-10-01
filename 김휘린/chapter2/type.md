@@ -268,10 +268,18 @@ let d: Direction = Direction.Up;
 
 #### typeof
 
-typeof는 연산하기 전에 피연산자의 데이터 타입을 나타내는 문자열을 반환한다.  
-typeof가 반환하는 값은 boolean, null, undefined, number, bigint, string, symbol, function, 호스트객체, object객체가 될 수 있다.
+typeof는 연산하기 전에 피연산자의 데이터 타입을 나타내는 문자열을 반환한다.
 
 반환값 예시
+
+- "undefined"
+- "boolean"
+- "number"
+- "bigint"
+- "string"
+- "symbol"
+- "function"
+- "object"
 
 ```javascript
 typeof 2022; // "number"
@@ -475,6 +483,20 @@ ES2015에 도입된 데이터 타입으로 Symbol()함수를 사용하면 어떤
 ### object
 
 ```javascript
+// object 타입은 원시 타입을 제외한 모든 값과 호환된다.
+let x: object;
+x = {}; // OK
+x = [1, 2, 3]; // OK
+x = new RegExp("a"); // OK
+x = () => {}; // OK
+x = class {}; // OK
+
+// 원시타입은 호환되지 않음
+x = 123; // ❌
+x = "hi"; // ❌
+```
+
+```javascript
 function isObject(value: object) {
   return (
     Object.prototype.toString.call(value).replace(/\[|\]|\s|object/g, "") ===
@@ -482,19 +504,13 @@ function isObject(value: object) {
   );
 }
 
-// 객체, 배열, 정규 표현식, 함수, 클래스 등 모두 object 타입과 호환된다.
-isObject({});
-isObject({ name: "KG" });
-isObject([0, 1, 2]);
-isObject(new RegExp("object"));
-isObject(function () {
-  console.log("hello world");
-});
-isObject(class Class {});
-
-// 그러나 원시타입은 호환되지 않음
-isObject(20); //false
-isObject("KG"); //false
+// 하지만 위처럼 순수 객체(plain object)만 판별해내는 함수로 걸러보면
+isObject({}); // true
+isObject({ name: "KG" }); // true
+isObject([0, 1, 2]); // false
+isObject(/abc/); // false
+isObject(() => {}); // false
+isObject(class {}); // false
 ```
 
 ### {}
@@ -526,6 +542,20 @@ const noticePopup: {
 
 {} 타입으로 지정된 객체는 완전히 비어있는 순수한 객체를 의미하는것이 이나다.  
 자바스크립트 프로토타입 체이닝으로 Object 객체 래퍼에서 제공하는 속성에는 정상적으로 접근이 가능하기 때문이다.
+
+#### 번외
+
+{} 타입은 사실상 모든 non-nullish 값을 허용한다.  
+순수 객체만 의미하는게 더더욱 아니라는것을 보여준다.
+
+```javascript
+let a: {};
+a = 10; // OK
+a = "hi"; // OK
+a = {}; // OK
+a = null; // ❌
+a = undefined; // ❌
+```
 
 ### array
 
@@ -607,3 +637,28 @@ type add = (a: number, b: number) => number;
 ```
 
 호출 시그니처는 자바스크립트의 화살표 함수와 맥락이 유사하다.
+
+---
+
+## 새로 알게된 부분
+
+### object vs {} vs Object
+
+- object : 원시타입 제외 모든 값과 호환된다.
+- {} : 사실상 null과 undefined를 제외한 모든 값이 허용된다.
+- Object : 자바스크립트 내장 객체 래퍼 타입 (new Object()와 같은것)
+
+### typeof null
+
+typeof null === "object"는 역사적 버그이다.
+
+- JS 초창기에는 값이 32비트 태그(tagged value)로 표현됐음
+- 이때 객체는 내부적으로 000패턴으로 태깅되었는데, null도 0x00으로 표현돼서 같은 패턴을 가짐
+- 그래서 typeof null이 "object"로 잘못 나오게 되었고, 나중에 수정하기에는 기존 코드와의 호환성 문제가 너무 커서 그대로 남기게 됨
+- 그래서 실제로 null판별을 할때는 항상 value === null, value == null 등을 사용해서 직접 비교를 해야함
+
+### enum
+
+- 단순 타입의 개념이 아닌 런타임에 실제 값이 존재한다.
+- enum은 컴파일 후 객체로 변환되므로 번들 크기문제 및 호환성 이슈가 있다.
+- 그래서 요즘은 as const + 유니온 타입을 더 많이 권장한다고 한다.
