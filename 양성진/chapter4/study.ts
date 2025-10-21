@@ -1,29 +1,36 @@
+interface A {
+  value: "A"; // 유닛 타입 (리터럴)
+  answer: 1;
+}
 
+interface B {
+  value: string; // string,number,void같은 타입은 유닛타입으로 적용되지 않음.
+  answer: 2;
+}
+interface C {
+  value: Error; // 인스턴스화가 가능한 타입.
+  answer: 3;
+}
 
-type TextError = {
-  errorType: "TEXT";
-  errorCode: string;
-  errorMessage: string;
-};
+type Unions = A | B | C;
 
-type ToastError = {
-  errorType: "TOAST";
-  errorCode: string;
-  errorMessage: string;
-  toastShowDuration: number;
-};
+function handle(param: Unions) {
+  // 판별자가 value일 때
 
-type AlertError = {
-  errorType: "ALERT";
-  errorCode: string;
-  errorMessage: string;
-  onConfirm: () => void;
-};
-type ErrorFeedbackType = TextError | ToastError | AlertError;
-const errorArr: ErrorFeedbackType[] = [
-  { errorType:'TEXT', errorCode: "100", errorMessage: "텍스트 에러" },
-  { errorType:'TOAST', errorCode: "200", errorMessage: "토스트 에러", toastShowDuration: 300 },
-  { errorType:'ALERT',errorCode: "300", errorMessage: "알러트 에러", onConfirm: () => {} }
-  { errorType:'ALERT',errorCode: "310", errorMessage: "알러트 에러", onConfirm: () => {},
-  toastShowDuration:5000, // Object literal 어쩌구저쩌구
-}]
+  param.answer; // 1 | 2 | 3
+
+  // a는 리터럴타입이라 타입 좁히기가 가능.
+  // 이는 string타입에 포함이 되므로 param은 A 또는 B타입으로 좁혀진다.
+  if (param.value == "A") {
+    param.answer; //1 | 2
+  }
+  // 예는 인스턴스화 되는 타입이라 좁히기가 불가능
+  if (param.value instanceof Error) {
+    param.answer; //1 | 2 | 3
+  }
+  // 판별자가 유닛 타입이므로 타입이 좁혀짐.
+  if (param.answer == 1) {
+    const msg = param.value.msg;
+    param.value; // a;
+  }
+}
