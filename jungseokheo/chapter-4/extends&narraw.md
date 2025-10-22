@@ -80,3 +80,128 @@ tip은 number 이면서 동시에 string이어야 함
 * `extends`: 상속이므로 부모의 타입을 덮어쓸 수 없음 (호환되는 타입으로 좁히는 건 가능)
 * `&`: 교차이므로 양쪽 조건을 모두 만족, number & string은 불가능해서 never
 
+# Q3. is 연산자로 사용자 정의 타입 가드 만들어 활용..?
+
+is 연산자를 사용해서 내가 직접 타입을 체크하는 함수를 만든다...
+
+```ts
+function 함수명(매개변수: 타입): 매개변수 is 특정타입 {
+  // 타입 체크 로직
+  return true 또는 false;
+}
+```
+
+실제 예시
+
+```ts
+interface Dog {
+  name: string;
+  bark(): void;
+}
+
+interface Cat {
+  name: string;
+  meow(): void;
+}
+
+type Animal = Dog | Cat;
+
+// 사용자 정의 타입 가드 만들기
+function isDog(animal: Animal): animal is Dog {
+  return (animal as Dog).bark !== undefined;
+}
+
+// 사용하기
+function makeSound(animal: Animal) {
+  if (isDog(animal)) {
+    // 여기서 animal은 Dog 타입으로 취급됨
+    animal.bark(); // ✅ OK
+  } else {
+    // 여기서 animal은 Cat 타입으로 취급됨
+    animal.meow(); // ✅ OK
+  }
+}
+```
+
+* 왜 사용할까?
+
+  * 복잡한 타입 체크 로직을 재사용 가능한 함수로 만들어서, TypeScript가 자동으로 타입을 좁혀주도록.
+
+# Q4. 식별할 수 있는 유니온???? 뭔데... 그게..
+
+**공통 속성을 이용해 타입을 쉽게 구분하는 패턴**
+죽, 여러 타입 중 어떤 타입인지 **구분할 수 있는 표시(태그)** 를 달아두는 것
+
+일반적인 유니온
+
+```ts
+interface Success {
+  data: string;
+}
+
+interface Error {
+  message: string;
+}
+
+type Result = Success | Error;
+
+function handleResult(result: Result) {
+  // data가 있는지 확인해야 Success인지 알 수 있음 (복잡!)
+  if ('data' in result) {
+    console.log(result.data);
+  }
+}
+
+```
+
+식별할 수 있는 유니온
+
+1. 에러 정의하기
+
+  ```ts
+  // 여러 종류의 에러를 판별자로 구분
+  interface NetworkError {
+    type: 'network';
+    code: number;
+  }
+
+  interface ValidationError {
+    type: 'validation';
+    field: string;
+  }
+
+  type AppError = NetworkError | ValidationError;
+  ```
+
+2. 식별할 수 있는 유니온
+
+  * 위 처럼 공통된 속성 (`type`)으로 타입을 구분 가능한 유니온
+
+3. 판별자(Discriminator) 선정
+  
+판별자 선택 기준
+
+  * 모든 타입에 동일한 이름의 속성이 있어야 함.
+  * 각 타입마다 고유한 값을 가져야 함.
+  * 보통 `type`, `kind`, `status` 같은 이름 사용.
+
+종합적인 내용
+
+```ts
+// 에러 정의 예시
+type ApiError = 
+  | { type: 'network'; code: number; message: string }
+  | { type: 'validation'; field: string; error: string }
+  | { type: 'auth'; reason: string };
+
+function handleError(error: ApiError) {
+  switch (error.type) {  // 판별자: type
+    case 'network':
+      return `네트워크 에러 ${error.code}: ${error.message}`;
+    case 'validation':
+      return `${error.field} 필드 검증 실패`;
+    case 'auth':
+      return `인증 실패: ${error.reason}`;
+  }
+}
+```
